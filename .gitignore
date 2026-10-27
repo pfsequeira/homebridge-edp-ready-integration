@@ -7,3 +7,4 @@ config.json
 raw_capture*.json
 *persist.json
 .DS_Store
+matter-pairing.png
