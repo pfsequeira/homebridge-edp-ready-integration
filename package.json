@@ -1,7 +1,7 @@
 {
   "name": "homebridge-edp-ready-integration",
   "displayName": "EDP Solar re:dy Integration",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Unofficial Homebridge plugin exposing EDP Solar / re:dy (r:easy) realtime solar production, house consumption, grid import and export to HomeKit with Eve power & history.",
   "main": "dist/index.js",
   "license": "MIT",
@@ -18,7 +18,7 @@
     "power-meter"
   ],
   "engines": {
-    "node": "^18.15.0 || ^20.7.0 || ^22",
+    "node": "^18.15.0 || ^20.7.0 || ^22 || ^24",
     "homebridge": "^1.6.0 || ^2.0.0-beta.0"
   },
   "files": [

@@ -10,7 +10,7 @@ type Key = 'consumed' | 'produced' | 'fromGrid' | 'injected';
 const METERS: { key: Key; name: string; total: (t: Totals) => number | undefined }[] = [
   { key: 'consumed', name: 'Consumo casa', total: t => (t.fromGridWh !== undefined && t.injectedWh !== undefined) ? (t.producedWh ?? 0) + t.fromGridWh - t.injectedWh : undefined },
   { key: 'produced', name: 'Produção solar', total: t => t.producedWh },
-  { key: 'fromGrid', name: 'Rede (importação)', total: t => t.fromGridWh },
+  { key: 'fromGrid', name: 'Rede importação', total: t => t.fromGridWh },
   { key: 'injected', name: 'Injeção na rede', total: t => t.injectedWh },
 ];
 
@@ -60,14 +60,14 @@ class EdpSolarPlatform implements DynamicPlatformPlugin {
       if (!a) { a = new this.api.platformAccessory(m.name, uuid); }
       a.getService(S.AccessoryInformation)!
         .setCharacteristic(C.Manufacturer, 'EDP').setCharacteristic(C.Model, 'r:easy / EDP Solar')
-        .setCharacteristic(C.SerialNumber, `edp-${m.key}`).setCharacteristic(C.FirmwareRevision, '0.1.0');
+        .setCharacteristic(C.SerialNumber, `edp-${m.key}`).setCharacteristic(C.FirmwareRevision, '0.1.1');
       const svc = a.getService(S.Outlet) ?? a.addService(S.Outlet, m.name);
       for (const ch of [this.eve.Power, this.eve.Total, this.eve.Volt]) { if (!svc.testCharacteristic(ch as any)) { svc.addCharacteristic(ch); } }
       // Read-only: switching from HomeKit is ignored and reverted
       svc.getCharacteristic(C.On).onSet(() => { setTimeout(() => svc.updateCharacteristic(C.On, (this.client?.values[m.key] ?? 0) > (this.config.threshold ?? 10)), 300); });
       let lux: Service | undefined = a.getService(S.LightSensor);
       if (this.config.luxSensors !== false) {
-        lux = lux ?? a.addService(S.LightSensor, `${m.name} (W)`);
+        lux = lux ?? a.addService(S.LightSensor, `${m.name} watts`);
       } else if (lux) { a.removeService(lux); lux = undefined; }
       const hist = new FakeGato('energy', a, { storage: 'fs', path: this.api.user.storagePath(), log: this.log, disableTimer: false });
       this.outlets[m.key] = { svc, hist, lux };

@@ -12,7 +12,7 @@ It talks only to the EDP cloud (AWS Cognito + EDP API + AWS IoT MQTT). Nothing o
 |---|---|
 | Consumo casa | House consumption = production + import − export (W) |
 | Produção solar | Solar production (W) |
-| Rede (importação) | Power imported from the grid (W) |
+| Rede importação | Power imported from the grid (W) |
 | Injeção na rede | Power exported to the grid (W) |
 
 Each one is an **Outlet** with Eve characteristics:
@@ -34,11 +34,11 @@ Homebridge UI → Plugins → search `homebridge-edp-ready-integration` (once pu
 # Homebridge UI → ⋮ → Terminal (Raspberry Pi image), or ssh:
 sudo hb-service add github:pfsequeira/homebridge-edp-ready-integration
 # or, from a local tarball copied to the Pi:
-sudo hb-service add /home/pi/homebridge-edp-ready-integration-0.1.0.tgz
+sudo hb-service add /home/pi/homebridge-edp-ready-integration-0.1.1.tgz
 ```
 (Equivalent: `npm install --prefix /var/lib/homebridge github:pfsequeira/homebridge-edp-ready-integration`.) Then restart Homebridge.
 
-Requirements: Node.js 18, 20 or 22; Homebridge ≥ 1.6 (2.x supported). Pure JavaScript, works on Raspberry Pi (ARM).
+Requirements: Node.js 18, 20, 22 or 24; Homebridge ≥ 1.6 (2.x supported). Pure JavaScript, works on Raspberry Pi (ARM).
 
 ## Configuration
 
@@ -74,8 +74,8 @@ Plugin **não oficial** (sem ligação à EDP) que mostra no HomeKit, em tempo r
 **Instalação no Raspberry Pi (imagem Homebridge):**
 1. Homebridge UI → ⋮ → *Terminal*:
    `sudo hb-service add github:pfsequeira/homebridge-edp-ready-integration`
-   (ou copie o `.tgz` para o Pi e use `sudo hb-service add /caminho/homebridge-edp-ready-integration-0.1.0.tgz`)
+   (ou copie o `.tgz` para o Pi e use `sudo hb-service add /caminho/homebridge-edp-ready-integration-0.1.1.tgz`)
 2. Plugins → *EDP Solar re:dy Integration* → *Settings*: email e password da conta EDP Solar.
 3. Reinicie o Homebridge.
 
-**O que aparece:** 4 tomadas (Consumo casa, Produção solar, Rede (importação), Injeção na rede). Na app **Casa** vê‑se ligado/desligado e os sensores de luz (lux = watts, úteis para automações). Na app **Eve** vê‑se W, kWh, V e o histórico.
+**O que aparece:** 4 tomadas (Consumo casa, Produção solar, Rede importação, Injeção na rede). Na app **Casa** vê‑se ligado/desligado e os sensores de luz (lux = watts, úteis para automações). Na app **Eve** vê‑se W, kWh, V e o histórico.
