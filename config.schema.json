@@ -1,0 +1,20 @@
+{
+  "pluginAlias": "EdpSolar",
+  "pluginType": "platform",
+  "singular": true,
+  "headerDisplay": "Lê em tempo real produção solar, consumo, importação e injeção da conta EDP Solar / r:easy (cloud EDP). Só leitura.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": { "title": "Nome", "type": "string", "default": "EDP Solar" },
+      "email": { "title": "Email da conta EDP Solar", "type": "string", "required": true, "format": "email" },
+      "password": { "title": "Password", "type": "string", "required": true, "x-schema-form": { "type": "password" } },
+      "threshold": { "title": "Limiar 'ligado' (W)", "type": "number", "default": 10, "description": "Tomada aparece ligada quando a potência > limiar (útil para automações: ex. 'Injeção' ligada = a exportar)." },
+      "luxSensors": { "title": "Criar sensores de luz (lux = watts) para automações na app Casa", "type": "boolean", "default": true },
+      "hide_consumed": { "title": "Esconder 'Consumo casa'", "type": "boolean", "default": false },
+      "hide_produced": { "title": "Esconder 'Produção solar'", "type": "boolean", "default": false },
+      "hide_fromGrid": { "title": "Esconder 'Rede (importação)'", "type": "boolean", "default": false },
+      "hide_injected": { "title": "Esconder 'Injeção na rede'", "type": "boolean", "default": false }
+    }
+  }
+}

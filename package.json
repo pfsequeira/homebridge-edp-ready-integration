@@ -1,0 +1,57 @@
+{
+  "name": "homebridge-edp-ready-integration",
+  "displayName": "EDP Solar re:dy Integration",
+  "version": "0.1.0",
+  "description": "Unofficial Homebridge plugin exposing EDP Solar / re:dy (r:easy) realtime solar production, house consumption, grid import and export to HomeKit with Eve power & history.",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "keywords": [
+    "homebridge-plugin",
+    "homebridge",
+    "homekit",
+    "edp",
+    "edp-solar",
+    "redy",
+    "solar",
+    "energy",
+    "eve",
+    "power-meter"
+  ],
+  "engines": {
+    "node": "^18.15.0 || ^20.7.0 || ^22",
+    "homebridge": "^1.6.0 || ^2.0.0-beta.0"
+  },
+  "files": [
+    "dist",
+    "config.schema.json",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run lint && npm run build"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity": "^3.600.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.600.0",
+    "fakegato-history": "^0.6.5",
+    "mqtt": "^5.10.0"
+  },
+  "devDependencies": {
+    "homebridge": "^1.8.0",
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  },
+  "author": "Francisco Sequeira (pfsequeira)",
+  "homepage": "https://github.com/pfsequeira/homebridge-edp-ready-integration#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pfsequeira/homebridge-edp-ready-integration.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pfsequeira/homebridge-edp-ready-integration/issues"
+  }
+}

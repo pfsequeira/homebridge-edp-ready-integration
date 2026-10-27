@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.tgz
+*.log
+.env
+config.json
+raw_capture*.json
+*persist.json
+.DS_Store
