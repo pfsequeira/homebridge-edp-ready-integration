@@ -1,5 +1,6 @@
 import { API, APIEvent, Characteristic, DynamicPlatformPlugin, Logging, PlatformAccessory, PlatformConfig, Service, WithUUID } from 'homebridge';
 import { EdpClient, Values, Totals } from './edpClient';
+import { MatterPublisher } from './matter';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const fakegato = require('fakegato-history');
 
@@ -21,6 +22,7 @@ class EdpSolarPlatform implements DynamicPlatformPlugin {
   private eve!: { Power: WithUUID<new () => Characteristic>; Total: WithUUID<new () => Characteristic>; Volt: WithUUID<new () => Characteristic> };
   private outlets: Partial<Record<Key, { svc: Service; hist: any; lux?: Service }>> = {};
   private client?: EdpClient;
+  private matter?: MatterPublisher;
 
   constructor(private log: Logging, private config: PlatformConfig, private api: API) {
     this.makeEve();
@@ -29,6 +31,9 @@ class EdpSolarPlatform implements DynamicPlatformPlugin {
   }
 
   configureAccessory(a: PlatformAccessory) { this.cached.push(a); }
+
+  configureMatterAccessory(a: any) { (this.matterCache ??= []).push(a); }
+  private matterCache?: any[];
 
   private makeEve() {
     const { Characteristic: C, Formats, Perms } = this.api.hap;
@@ -60,7 +65,7 @@ class EdpSolarPlatform implements DynamicPlatformPlugin {
       if (!a) { a = new this.api.platformAccessory(m.name, uuid); }
       a.getService(S.AccessoryInformation)!
         .setCharacteristic(C.Manufacturer, 'EDP').setCharacteristic(C.Model, 'r:easy / EDP Solar')
-        .setCharacteristic(C.SerialNumber, `edp-${m.key}`).setCharacteristic(C.FirmwareRevision, '0.1.1');
+        .setCharacteristic(C.SerialNumber, `edp-${m.key}`).setCharacteristic(C.FirmwareRevision, '0.2.0');
       const svc = a.getService(S.Outlet) ?? a.addService(S.Outlet, m.name);
       for (const ch of [this.eve.Power, this.eve.Total, this.eve.Volt]) { if (!svc.testCharacteristic(ch as any)) { svc.addCharacteristic(ch); } }
       // Read-only: switching from HomeKit is ignored and reverted
@@ -78,9 +83,14 @@ class EdpSolarPlatform implements DynamicPlatformPlugin {
     const stale = this.cached.filter(a => !wanted.has(a.UUID));
     if (stale.length) { this.api.unregisterPlatformAccessories(PLUGIN, PLATFORM, stale); }
 
+    if (MatterPublisher.available(this.api, this.log, this.config)) {
+      this.matter = new MatterPublisher(this.api, this.log, this.config);
+      for (const a of this.matterCache ?? []) { this.matter.addCached(a); }
+      try { await this.matter.start(); } catch (e: any) { this.log.error(`Matter: falha ao publicar: ${e.message}`); this.matter = undefined; }
+    }
     this.client = new EdpClient(email, password, this.log);
-    this.client.on('values', (v: Values) => this.onValues(v));
-    this.client.on('totals', (t: Totals) => this.onTotals(t));
+    this.client.on('values', (v: Values) => { this.onValues(v); this.matter?.onValues(v); });
+    this.client.on('totals', (t: Totals) => { this.onTotals(t); this.matter?.onTotals(t); });
     const start = async () => {
       try { await this.client!.start(); this.log.debug(`EDP: dispositivos ${JSON.stringify(this.client!.devices)}`); }
       catch (e: any) { this.log.error(`EDP: arranque falhou: ${e.message}; nova tentativa em 5 min`); setTimeout(start, 300e3); }

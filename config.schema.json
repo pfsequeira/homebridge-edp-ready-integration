@@ -6,15 +6,72 @@
   "schema": {
     "type": "object",
     "properties": {
-      "name": { "title": "Nome", "type": "string", "default": "EDP Solar" },
-      "email": { "title": "Email da conta EDP Solar", "type": "string", "required": true, "format": "email" },
-      "password": { "title": "Password", "type": "string", "required": true, "x-schema-form": { "type": "password" } },
-      "threshold": { "title": "Limiar 'ligado' (W)", "type": "number", "default": 10, "description": "Tomada aparece ligada quando a potência > limiar (útil para automações: ex. 'Injeção' ligada = a exportar)." },
-      "luxSensors": { "title": "Criar sensores de luz (lux = watts) para automações na app Casa", "type": "boolean", "default": true },
-      "hide_consumed": { "title": "Esconder 'Consumo casa'", "type": "boolean", "default": false },
-      "hide_produced": { "title": "Esconder 'Produção solar'", "type": "boolean", "default": false },
-      "hide_fromGrid": { "title": "Esconder 'Rede (importação)'", "type": "boolean", "default": false },
-      "hide_injected": { "title": "Esconder 'Injeção na rede'", "type": "boolean", "default": false }
+      "name": {
+        "title": "Nome",
+        "type": "string",
+        "default": "EDP Solar"
+      },
+      "email": {
+        "title": "Email da conta EDP Solar",
+        "type": "string",
+        "required": true,
+        "format": "email"
+      },
+      "password": {
+        "title": "Password",
+        "type": "string",
+        "required": true,
+        "x-schema-form": {
+          "type": "password"
+        }
+      },
+      "threshold": {
+        "title": "Limiar 'ligado' (W)",
+        "type": "number",
+        "default": 10,
+        "description": "Tomada aparece ligada quando a potência > limiar (útil para automações: ex. 'Injeção' ligada = a exportar)."
+      },
+      "luxSensors": {
+        "title": "Criar sensores de luz (lux = watts) para automações na app Casa",
+        "type": "boolean",
+        "default": true
+      },
+      "hide_consumed": {
+        "title": "Esconder 'Consumo casa'",
+        "type": "boolean",
+        "default": false
+      },
+      "hide_produced": {
+        "title": "Esconder 'Produção solar'",
+        "type": "boolean",
+        "default": false
+      },
+      "hide_fromGrid": {
+        "title": "Esconder 'Rede (importação)'",
+        "type": "boolean",
+        "default": false
+      },
+      "hide_injected": {
+        "title": "Esconder 'Injeção na rede'",
+        "type": "boolean",
+        "default": false
+      },
+      "matter": {
+        "title": "Matter (iOS 27 Energy)",
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "title": "Enable Matter mode (requires Homebridge >= 2.3 and Matter enabled on this plugin's child bridge)",
+            "type": "boolean",
+            "default": false
+          },
+          "exposeProduction": {
+            "title": "Experimental: also expose 'Produção solar' as a Matter outlet (negative power / exported energy)",
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
     }
   }
 }
