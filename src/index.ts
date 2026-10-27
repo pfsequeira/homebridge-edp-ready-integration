@@ -70,6 +70,8 @@ class EdpSolarPlatform implements DynamicPlatformPlugin {
         lux = lux ?? a.addService(S.LightSensor, `${m.name} watts`);
       } else if (lux) { a.removeService(lux); lux = undefined; }
       const hist = new FakeGato('energy', a, { storage: 'fs', path: this.api.user.storagePath(), log: this.log, disableTimer: false });
+      svc.setCharacteristic(C.Name, m.name); lux?.setCharacteristic(C.Name, `${m.name} watts`);
+      if (a.displayName !== m.name) { a.displayName = m.name; a.getService(S.AccessoryInformation)!.setCharacteristic(C.Name, m.name); if (!isNew) { this.api.updatePlatformAccessories([a]); } }
       this.outlets[m.key] = { svc, hist, lux };
       if (isNew) { this.api.registerPlatformAccessories(PLUGIN, PLATFORM, [a]); }
     }
