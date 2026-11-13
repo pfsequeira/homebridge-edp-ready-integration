@@ -1,10 +1,18 @@
 {
   "name": "homebridge-edp-ready-integration",
-  "displayName": "EDP Solar re:dy Integration",
-  "version": "0.2.0",
-  "description": "Unofficial Homebridge plugin exposing EDP Solar / re:dy (r:easy) realtime solar production, house consumption, grid import and export to HomeKit with Eve power & history.",
-  "main": "dist/index.js",
+  "displayName": "EDP Solar re:dy",
+  "version": "1.0.0",
+  "description": "Unofficial Homebridge plugin that shows realtime solar production, home consumption, grid import and grid export from an EDP Solar / re:dy account in HomeKit, with Eve power and history, plus optional Matter energy for the iOS Home app.",
+  "author": "Francisco Sequeira (pfsequeira)",
   "license": "MIT",
+  "homepage": "https://github.com/pfsequeira/homebridge-edp-ready-integration#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pfsequeira/homebridge-edp-ready-integration.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pfsequeira/homebridge-edp-ready-integration/issues"
+  },
   "keywords": [
     "edp",
     "edp-solar",
@@ -18,10 +26,7 @@
     "redy",
     "solar"
   ],
-  "engines": {
-    "node": "^18.15.0 || ^20.7.0 || ^22 || ^24",
-    "homebridge": "^1.6.0 || ^2.0.0-beta.0"
-  },
+  "main": "dist/index.js",
   "files": [
     "dist",
     "config.schema.json",
@@ -29,9 +34,14 @@
     "LICENSE",
     "CHANGELOG.md"
   ],
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || ^24.0.0 || ^26.0.0",
+    "homebridge": "^1.8.0 || ^2.0.0"
+  },
   "scripts": {
-    "build": "tsc",
-    "lint": "tsc --noEmit",
+    "build": "rimraf ./dist && tsc",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
     "prepare": "npm run build",
     "prepublishOnly": "npm run lint && npm run build"
   },
@@ -42,17 +52,12 @@
     "mqtt": "^5.10.0"
   },
   "devDependencies": {
-    "homebridge": "^1.8.0",
-    "typescript": "^5.4.0",
-    "@types/node": "^20.0.0"
-  },
-  "author": "Francisco Sequeira (pfsequeira)",
-  "homepage": "https://github.com/pfsequeira/homebridge-edp-ready-integration#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/pfsequeira/homebridge-edp-ready-integration.git"
-  },
-  "bugs": {
-    "url": "https://github.com/pfsequeira/homebridge-edp-ready-integration/issues"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.0.0",
+    "eslint": "^10.14.0",
+    "homebridge": "^1.11.4",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.2"
   }
 }

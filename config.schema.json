@@ -2,23 +2,25 @@
   "pluginAlias": "EdpSolar",
   "pluginType": "platform",
   "singular": true,
-  "headerDisplay": "Lê em tempo real produção solar, consumo, importação e injeção da conta EDP Solar / r:easy (cloud EDP). Só leitura.",
+  "headerDisplay": "Unofficial, read-only plugin. Shows realtime solar production, home consumption, grid import and grid export from your EDP Solar / re:dy account (EDP cloud) in HomeKit.",
+  "footerDisplay": "Credentials are only sent to EDP's login service and are never logged. See the [README](https://github.com/pfsequeira/homebridge-edp-ready-integration#readme) for details.",
   "schema": {
     "type": "object",
     "properties": {
       "name": {
-        "title": "Nome",
+        "title": "Name",
         "type": "string",
-        "default": "EDP Solar"
+        "default": "EDP Solar",
+        "required": true
       },
       "email": {
-        "title": "Email da conta EDP Solar",
+        "title": "EDP Solar account email",
         "type": "string",
         "required": true,
         "format": "email"
       },
       "password": {
-        "title": "Password",
+        "title": "EDP Solar account password",
         "type": "string",
         "required": true,
         "x-schema-form": {
@@ -26,35 +28,47 @@
         }
       },
       "threshold": {
-        "title": "Limiar 'ligado' (W)",
+        "title": "\"On\" threshold (W)",
         "type": "number",
         "default": 10,
-        "description": "Tomada aparece ligada quando a potência > limiar (útil para automações: ex. 'Injeção' ligada = a exportar)."
+        "minimum": 0,
+        "description": "An outlet shows as on when its power is above this value. Useful for automations, e.g. Grid Export on = exporting to the grid."
       },
       "luxSensors": {
-        "title": "Criar sensores de luz (lux = watts) para automações na app Casa",
+        "title": "Create light sensors (lux = watts) for Apple Home automations",
         "type": "boolean",
         "default": true
       },
       "hide_consumed": {
-        "title": "Esconder 'Consumo casa'",
+        "title": "Hide Home Consumption",
         "type": "boolean",
         "default": false
       },
       "hide_produced": {
-        "title": "Esconder 'Produção solar'",
+        "title": "Hide Solar Production",
         "type": "boolean",
         "default": false
       },
       "hide_fromGrid": {
-        "title": "Esconder 'Rede (importação)'",
+        "title": "Hide Grid Import",
         "type": "boolean",
         "default": false
       },
       "hide_injected": {
-        "title": "Esconder 'Injeção na rede'",
+        "title": "Hide Grid Export",
         "type": "boolean",
         "default": false
+      },
+      "names": {
+        "title": "Accessory names (optional)",
+        "type": "object",
+        "description": "Leave empty to keep the current names. New accessories default to the English names shown.",
+        "properties": {
+          "consumed": { "title": "Home consumption", "type": "string", "placeholder": "Home Consumption" },
+          "produced": { "title": "Solar production", "type": "string", "placeholder": "Solar Production" },
+          "fromGrid": { "title": "Grid import", "type": "string", "placeholder": "Grid Import" },
+          "injected": { "title": "Grid export", "type": "string", "placeholder": "Grid Export" }
+        }
       },
       "matter": {
         "title": "Matter (iOS 27 Energy)",
@@ -66,12 +80,31 @@
             "default": false
           },
           "exposeProduction": {
-            "title": "Experimental: also expose 'Produção solar' as a Matter outlet (negative power / exported energy)",
+            "title": "Experimental: also expose Solar Production as a Matter outlet (negative power / exported energy)",
             "type": "boolean",
             "default": false
           }
         }
       }
     }
-  }
+  },
+  "layout": [
+    "name",
+    "email",
+    "password",
+    "threshold",
+    "luxSensors",
+    {
+      "type": "fieldset",
+      "title": "Accessories",
+      "expandable": true,
+      "items": ["hide_consumed", "hide_produced", "hide_fromGrid", "hide_injected", "names.consumed", "names.produced", "names.fromGrid", "names.injected"]
+    },
+    {
+      "type": "fieldset",
+      "title": "Matter",
+      "expandable": true,
+      "items": ["matter.enabled", "matter.exposeProduction"]
+    }
+  ]
 }

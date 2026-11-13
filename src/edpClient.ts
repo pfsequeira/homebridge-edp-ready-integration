@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- EDP API and MQTT payloads are untyped JSON */
 import { createHmac, createHash, randomUUID } from 'crypto';
 import { EventEmitter } from 'events';
 import { CognitoIdentityProviderClient, InitiateAuthCommand } from '@aws-sdk/client-cognito-identity-provider';
 import { CognitoIdentityClient, GetIdCommand, GetCredentialsForIdentityCommand } from '@aws-sdk/client-cognito-identity';
 import mqtt, { MqttClient } from 'mqtt';
 
-// Public app constants (same as the community Home Assistant integration)
+// Public constants of the EDP mobile app (also used by the community Home Assistant integration).
+// These identify the app, not the user; user credentials only come from the plugin config.
 const REGION = 'eu-west-1';
 const ID_USER_POOL = 'eu-west-1_CZc7dNRRv';
 const CLIENT_ID = '6qvkl7ibvspbfjabmhqhije6e1';
@@ -17,6 +19,9 @@ export type Role = 'PRODUCTION' | 'GRID' | 'OTHER';
 export interface Values { produced?: number; fromGrid?: number; injected?: number; consumed?: number }
 export interface Totals { producedWh?: number; fromGridWh?: number; injectedWh?: number; voltage?: number }
 interface Logger { info(m: string): void; warn(m: string): void; error(m: string): void; debug(m: string): void }
+
+const HTTP_TIMEOUT_MS = 20000;
+const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 const hmac = (k: Buffer | string, d: string) => createHmac('sha256', k).update(d).digest();
 const sha = (d: string) => createHash('sha256').update(d).digest('hex');
@@ -50,6 +55,7 @@ export class EdpClient extends EventEmitter {
   values: Values = {};
   totals: Totals = {};
   private timers: NodeJS.Timeout[] = [];
+  private timeouts = new Set<NodeJS.Timeout>();
   private stopped = false;
 
   constructor(private email: string, private password: string, private log: Logger) { super(); }
@@ -69,18 +75,23 @@ export class EdpClient extends EventEmitter {
     const c = await ci.send(new GetCredentialsForIdentityCommand({ IdentityId: id.IdentityId!, Logins }));
     const cr = c.Credentials!;
     this.creds = { ak: cr.AccessKeyId!, sk: cr.SecretKey!, token: cr.SessionToken!, exp: cr.Expiration?.getTime() ?? Date.now() + 3600e3 };
-    this.log.info('EDP: login OK');
+    this.log.info('Logged in to EDP');
   }
 
   private async get(path: string) {
-    const r = await fetch(API + path, { headers: { Authorization: this.idToken, 'Content-Type': 'application/json', 'User-Agent': 'okhttp/5.0.0-alpha.14' } });
+    const r = await fetch(API + path, {
+      headers: { Authorization: this.idToken, 'Content-Type': 'application/json', 'User-Agent': 'okhttp/5.0.0-alpha.14' },
+      signal: AbortSignal.timeout(HTTP_TIMEOUT_MS),
+    });
     if (!r.ok) { throw new Error(`EDP API ${path} -> HTTP ${r.status}`); }
     return r.json() as Promise<any>;
   }
 
   private async discover() {
     const houses = await this.get('/houses');
-    this.houseId = houses.houses[0].houseId;
+    const houseId = houses?.houses?.[0]?.houseId;
+    if (!houseId) { throw new Error('No house found on this EDP account'); }
+    this.houseId = houseId;
     const devices = await this.get(`/houses/${this.houseId}/device`);
     await this.refreshModules(devices);
   }
@@ -91,7 +102,7 @@ export class EdpClient extends EventEmitter {
     const byDev: Record<string, any> = {};
     for (const m of mods) { byDev[m.deviceId] = m; }
     const t: Totals = {};
-    for (const d of devices!) {
+    for (const d of Array.isArray(devices) ? devices : []) {
       const m = byDev[d.deviceId] ?? {};
       const g: string[] = m.groups ?? [];
       const role: Role = g.includes('PRODUCTION_METER') ? 'PRODUCTION' : g.includes('CONSUMPTION_METER') ? 'GRID' : 'OTHER';
@@ -107,24 +118,25 @@ export class EdpClient extends EventEmitter {
   }
 
   private connectMqtt() {
+    if (this.stopped) { return; }
     this.client?.end(true);
     const c = this.creds!;
     const client = mqtt.connect(presignIotUrl(c.ak, c.sk, c.token), {
       clientId: randomUUID(), protocolVersion: 4, reconnectPeriod: 0, connectTimeout: 20000, keepalive: 60,
     });
     client.on('connect', () => {
-      this.log.info('EDP: MQTT connected');
+      this.log.info('Connected to the EDP realtime stream');
       for (const [lid, d] of Object.entries(this.devices)) {
         client.subscribe([`${d.type}/${lid}/fromDev/realtime`, `${d.type}/${lid}/fromDev/module/changed`], { qos: 1 });
       }
       this.requestRealtime();
     });
     client.on('message', (topic, buf) => this.onMessage(topic, buf));
-    client.on('error', e => this.log.warn(`EDP: MQTT error: ${e.message}`));
+    client.on('error', e => this.log.warn(`Realtime stream error: ${e.message}`));
     client.on('close', () => {
       if (this.stopped || this.client !== client) { return; }
-      this.log.warn('EDP: MQTT closed, reconnecting in 15s');
-      setTimeout(() => this.reconnect(), 15000);
+      this.log.warn('Realtime stream closed, reconnecting in 15 s');
+      this.later(() => this.reconnect(), 15000);
     });
     this.client = client;
   }
@@ -134,9 +146,9 @@ export class EdpClient extends EventEmitter {
     try {
       if (!this.creds || this.creds.exp - Date.now() < 10 * 60e3) { await this.login(); }
       this.connectMqtt();
-    } catch (e: any) {
-      this.log.error(`EDP: reconnect failed: ${e.message}; retry in 60s`);
-      setTimeout(() => this.reconnect(), 60000);
+    } catch (e) {
+      this.log.error(`Reconnect failed: ${errMsg(e)}. Retrying in 60 s.`);
+      this.later(() => this.reconnect(), 60000);
     }
   }
 
@@ -168,6 +180,7 @@ export class EdpClient extends EventEmitter {
   }
 
   async start() {
+    this.timers.forEach(clearInterval); this.timers = [];
     await this.login();
     await this.discover();
     this.connectMqtt();
@@ -175,11 +188,21 @@ export class EdpClient extends EventEmitter {
     // Refresh credentials before the ~1h expiry, then reconnect MQTT with new signature
     this.timers.push(setInterval(async () => {
       if (this.creds && this.creds.exp - Date.now() < 15 * 60e3) {
-        try { await this.login(); this.connectMqtt(); } catch (e: any) { this.log.error(`EDP: re-login failed: ${e.message}`); }
+        try { await this.login(); this.connectMqtt(); } catch (e) { this.log.error(`Session renewal failed: ${errMsg(e)}`); }
       }
     }, 60e3));
-    this.timers.push(setInterval(() => this.refreshModules().catch(e => this.log.warn(`EDP: totals refresh failed: ${e.message}`)), 5 * 60e3));
+    this.timers.push(setInterval(() => this.refreshModules().catch(e => this.log.warn(`Totals refresh failed: ${errMsg(e)}`)), 5 * 60e3));
   }
 
-  stop() { this.stopped = true; this.timers.forEach(clearInterval); this.client?.end(true); }
+  private later(fn: () => unknown, ms: number) {
+    const t = setTimeout(() => { this.timeouts.delete(t); if (!this.stopped) { void fn(); } }, ms);
+    this.timeouts.add(t);
+  }
+
+  stop() {
+    this.stopped = true;
+    this.timers.forEach(clearInterval); this.timers = [];
+    this.timeouts.forEach(clearTimeout); this.timeouts.clear();
+    this.client?.end(true);
+  }
 }
